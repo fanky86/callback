@@ -1,11 +1,15 @@
 const express = require('express');
 const axios = require('axios');
-
 const app = express();
 
 const FACEBOOK_APP_ID = '564471992863258'; 
-const FACEBOOK_APP_SECRET = '18365c22f39da44c9733def5b17e6554'; 
-const REDIRECT_URI = 'https://callbackmain.vercel.app'; 
+const FACEBOOK_APP_SECRET = '18365c22f39da44c9733def5b17e6554'; // Gunakan variabel lingkungan
+const REDIRECT_URI = 'https://callbackmain.vercel.app'; // Ganti dengan Redirect URI Anda
+
+// Menangani permintaan ke root '/'
+app.get('/', (req, res) => {
+    res.send('<h1>Welcome to the Facebook Login App</h1>');
+});
 
 // 1. Endpoint untuk mengarahkan pengguna ke Facebook Login
 app.get('/login', (req, res) => {
