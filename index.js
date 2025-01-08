@@ -4,7 +4,7 @@ const app = express();
 
 const FACEBOOK_APP_ID = '560318786720318'; 
 const FACEBOOK_APP_SECRET = '6f0d6497a648887a8391a10e3796a5bf'; // Gunakan variabel lingkungan
-const REDIRECT_URI = 'https://callbackmain.vercel.app'; // Ganti dengan Redirect URI Anda
+const REDIRECT_URI = 'https://callbackmain.vercel.app/callback'; // Ganti dengan Redirect URI Anda
 
 // Menangani permintaan ke root '/'
 app.get('/', (req, res) => {
