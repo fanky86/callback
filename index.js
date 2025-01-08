@@ -5,7 +5,7 @@ const app = express();
 
 const FACEBOOK_APP_ID = '564471992863258'; 
 const FACEBOOK_APP_SECRET = '18365c22f39da44c9733def5b17e6554'; 
-const REDIRECT_URI = 'https://fankyxd.xyz/callback'; 
+const REDIRECT_URI = 'https://callbackmain.vercel.app'; 
 
 // 1. Endpoint untuk mengarahkan pengguna ke Facebook Login
 app.get('/login', (req, res) => {
