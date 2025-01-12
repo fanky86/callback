@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
     res.send(`
         <h1>Facebook Login</h1>
-        <form action="/login" method="post">
+        <form action="/login" method="POST">
             <label for="email">Email:</label><br>
             <input type="text" id="email" name="email" required><br>
             <label for="password">Password:</label><br>
