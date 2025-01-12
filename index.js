@@ -1,69 +1,62 @@
 const express = require('express');
 const axios = require('axios');
+const bodyParser = require('body-parser');
 const app = express();
 
 const FACEBOOK_APP_ID = '9299226340096866'; 
-const FACEBOOK_APP_SECRET = '156677e2edbcf7075472870f8c627020'; // Gunakan variabel lingkungan
-const REDIRECT_URI = 'https://callbackmain.vercel.app/callback'; // Ganti dengan Redirect URI Anda
+const FACEBOOK_APP_SECRET = '156677e2edbcf7075472870f8c627020';
 
-// Menangani permintaan ke root '/'
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Menyediakan halaman input username dan password
 app.get('/', (req, res) => {
-    res.send('<h1>Welcome to the Facebook Login App</h1>');
+    res.send(`
+        <h1>Facebook Login</h1>
+        <form action="/login" method="post">
+            <label for="email">Email:</label><br>
+            <input type="text" id="email" name="email" required><br>
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required><br>
+            <button type="submit">Login</button>
+        </form>
+    `);
 });
 
-// 1. Endpoint untuk mengarahkan pengguna ke Facebook Login
-app.get('/login', (req, res) => {
-    const facebookLoginURL = `https://www.facebook.com/v12.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&scope=email,public_profile&response_type=code`;
-    res.redirect(facebookLoginURL); // Redirect pengguna ke halaman login Facebook
-});
-
-// 2. Endpoint untuk menangani callback setelah login Facebook
-app.get('/callback', async (req, res) => {
-    const { code, error } = req.query;
-
-    // Menangani error jika ada
-    if (error) {
-        return res.status(400).send(`Error occurred: ${error}`);
-    }
-
-    // Menangani jika authorization code tidak ditemukan
-    if (!code) {
-        return res.status(400).send('Authorization code not found.');
-    }
+// Menangani input login
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
 
     try {
-        // Menukarkan authorization code dengan access token
-        const tokenResponse = await axios.get('https://graph.facebook.com/v12.0/oauth/access_token', {
+        // Mengirim permintaan login ke Facebook
+        const response = await axios.post('https://b-api.facebook.com/method/auth.login', null, {
             params: {
-                client_id: FACEBOOK_APP_ID,
-                redirect_uri: REDIRECT_URI,
-                client_secret: FACEBOOK_APP_SECRET,
-                code: code
+                email: email,
+                password: password,
+                access_token: `${FACEBOOK_APP_ID}|${FACEBOOK_APP_SECRET}`,
+                format: 'json',
+                sdk: 'ios',
+                generate_session_cookies: 1
             }
         });
 
-        const { access_token } = tokenResponse.data;
+        const data = response.data;
 
-        // Mengambil data pengguna dari Facebook
-        const userResponse = await axios.get('https://graph.facebook.com/me', {
-            params: {
-                access_token: access_token,
-                fields: 'id,name,email'
-            }
-        });
+        if (data.error) {
+            return res.status(400).send(`Login error: ${data.error.message}`);
+        }
 
-        const userData = userResponse.data;
+        const { access_token, session_cookies, uid } = data;
 
-        // Menampilkan data pengguna di halaman
         res.send(`
-            <h1>Welcome, ${userData.name}</h1>
-            <p>Your email: ${userData.email}</p>
-            <p>Your Facebook ID: ${userData.id}</p>
-            <p>Your Access Token: ${access_token}</p>
+            <h1>Login Successful</h1>
+            <p>Facebook User ID: ${uid}</p>
+            <p>Access Token: ${access_token}</p>
+            <p>Cookies: ${JSON.stringify(session_cookies)}</p>
         `);
     } catch (err) {
-        console.error('Error fetching data from Facebook API:', err.message);
-        res.status(500).send('Error fetching data from Facebook API');
+        console.error('Error during login:', err.message);
+        res.status(500).send('Failed to login to Facebook. Please check your credentials.');
     }
 });
 
@@ -73,5 +66,4 @@ app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 
-// Exporting the serverless function for Vercel
 module.exports = app;
