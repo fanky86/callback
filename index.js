@@ -3,8 +3,8 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const app = express();
 
-const FACEBOOK_APP_ID = '9299226340096866'; 
-const FACEBOOK_APP_SECRET = '156677e2edbcf7075472870f8c627020';
+const FACEBOOK_APP_ID = '200424423651082'; 
+const FACEBOOK_APP_SECRET = '2a9918c6bcd75b94cefcbb5635c6ad16';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -29,7 +29,7 @@ app.post('/login', async (req, res) => {
 
     try {
         // Mengirim permintaan login ke Facebook
-        const response = await axios.post('https://b-api.facebook.com/method/auth.login', null, {
+        const response = await axios.post('https://graph.facebook.com/auth/login', null, {
             params: {
                 email: email,
                 password: password,
