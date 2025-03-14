@@ -6,7 +6,7 @@ const app = express();
 // Facebook App credentials
 const FACEBOOK_APP_ID = '200424423651082'; 
 const FACEBOOK_APP_SECRET = '2a9918c6bcd75b94cefcbb5635c6ad16';
-const FACEBOOK_REDIRECT_URI = 'http://localhost:3000/auth/facebook/callback'; // your callback URL
+const FACEBOOK_REDIRECT_URI = 'https://callbackmain.vercel.app/auth/facebook/callback'; // your callback URL
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
