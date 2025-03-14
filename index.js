@@ -3,18 +3,18 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const app = express();
 
-// Credential Facebook App
+// Facebook App credentials
 const FACEBOOK_APP_ID = '200424423651082'; 
 const FACEBOOK_APP_SECRET = '2a9918c6bcd75b94cefcbb5635c6ad16';
-const FACEBOOK_REDIRECT_URI = 'https://callbackmain.vercel.app/auth/facebook/callback'; // URL callback kamu
+const FACEBOOK_REDIRECT_URI = 'https://callbackmain.vercel.app/auth/facebook/callback'; // URL callback yang digunakan
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Menyediakan halaman input username dan password
+// Menyediakan halaman input username dan password (hanya contoh, menggunakan OAuth lebih baik)
 app.get('/', (req, res) => {
     res.send(`
-        <h1>Facebook Login</h1>
+        <h1>Login dengan Facebook</h1>
         <form action="/login" method="POST">
             <label for="email">Email:</label><br>
             <input type="text" id="email" name="email" required><br>
@@ -23,7 +23,7 @@ app.get('/', (req, res) => {
             <button type="submit">Login</button>
         </form>
         <br>
-        <a href="/login/facebook">Login with Facebook</a>
+        <a href="/login/facebook">Login dengan Facebook</a>
     `);
 });
 
@@ -33,21 +33,41 @@ app.get('/login/facebook', (req, res) => {
     res.redirect(facebookAuthUrl);
 });
 
-// Langkah 2: Menangani input login menggunakan email dan password (ini hanya contoh, tidak disarankan untuk produksi)
+// Langkah 2: Menangani login dengan menggunakan email dan password
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Mengirim permintaan login ke Facebook (harus diganti dengan implementasi OAuth yang tepat)
+        // Ini hanya contoh, Facebook tidak mengizinkan login langsung dengan email dan password
+        const params = {
+            access_token: `${FACEBOOK_APP_ID}|${FACEBOOK_APP_SECRET}`,
+            email: email,
+            password: password,
+            sdk: 'ios',
+            generate_session_cookies: '1',
+            locale: 'zh_CN',
+            sig: '4f648f21fb58fcd2aa1c65f35f441ef5',
+        };
+
+        const headers = {
+            'Host': 'graph.facebook.com',
+            'x-fb-sim-hni': Math.floor(Math.random() * (300000 - 100000 + 1)) + 100000, // Random HNI
+            'x-fb-net-hni': Math.floor(Math.random() * (300000 - 100000 + 1)) + 100000, // Random HNI
+            'x-fb-connection-quality': 'EXCELLENT',
+            'user-agent': 'FBAN/FB4A;FBAV/352.0.0.51.289;FBBV/468172849;FBDV/Redmi Note 7;FBPN/com.facebook.katana',
+            'content-type': 'application/x-www-form-urlencoded',
+            'x-fb-device-group': Math.floor(Math.random() * (4000 - 1000 + 1)) + 1000,
+            'x-fb-friendly-name': 'RelayFBNetwork_GemstoneProfilePreloadableNonSelfViewQuery',
+            'x-fb-request-analytics-tags': 'unknown',
+            'accept-encoding': 'gzip, deflate',
+            'x-fb-http-engine': 'Liger',
+            'connection': 'close',
+        };
+
+        // Mengirim permintaan login ke Facebook dengan parameter dan header
         const response = await axios.post('https://graph.facebook.com/auth/login', null, {
-            params: {
-                email: email,
-                password: password,
-                access_token: `${FACEBOOK_APP_ID}|${FACEBOOK_APP_SECRET}`,
-                format: 'json',
-                sdk: 'ios',
-                generate_session_cookies: 1
-            }
+            params: params,
+            headers: headers,
         });
 
         const data = response.data;
@@ -59,18 +79,18 @@ app.post('/login', async (req, res) => {
         const { access_token, session_cookies, uid } = data;
 
         res.send(`
-            <h1>Login Successful</h1>
-            <p>Facebook User ID: ${uid}</p>
+            <h1>Login Berhasil</h1>
+            <p>ID Pengguna Facebook: ${uid}</p>
             <p>Access Token: ${access_token}</p>
             <p>Cookies: ${JSON.stringify(session_cookies)}</p>
         `);
     } catch (err) {
-        console.error('Error during login:', err.message);
-        res.status(500).send('Failed to login to Facebook. Please check your credentials.');
+        console.error('Terjadi kesalahan:', err.message);
+        res.status(500).send('Gagal login ke Facebook. Periksa kredensial Anda.');
     }
 });
 
-// Langkah 3: Menangani redirect dari Facebook setelah login berhasil
+// Langkah 3: Menangani callback dari Facebook setelah login berhasil
 app.get('/auth/facebook/callback', async (req, res) => {
     const { code } = req.query;
 
@@ -79,7 +99,7 @@ app.get('/auth/facebook/callback', async (req, res) => {
     }
 
     try {
-        // Langkah 4: Tukar kode otorisasi dengan token akses
+        // Tukar kode otorisasi dengan token akses
         const response = await axios.get('https://graph.facebook.com/v15.0/oauth/access_token', {
             params: {
                 client_id: FACEBOOK_APP_ID,
@@ -91,7 +111,7 @@ app.get('/auth/facebook/callback', async (req, res) => {
 
         const { access_token } = response.data;
 
-        // Langkah 5: Gunakan token akses untuk mengambil data pengguna
+        // Ambil data pengguna dengan menggunakan token akses
         const userInfo = await axios.get('https://graph.facebook.com/me', {
             params: {
                 access_token,
@@ -99,13 +119,12 @@ app.get('/auth/facebook/callback', async (req, res) => {
             },
         });
 
-        // Menampilkan informasi pengguna
         res.send(`
             <h1>Login Berhasil</h1>
             <p>ID Pengguna Facebook: ${userInfo.data.id}</p>
             <p>Nama: ${userInfo.data.name}</p>
             <p>Email: ${userInfo.data.email}</p>
-            <p>Token Akses: ${access_token}</p>
+            <p>Access Token: ${access_token}</p>
         `);
     } catch (err) {
         console.error('Terjadi kesalahan selama otentikasi:', err.message);
