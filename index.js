@@ -3,64 +3,64 @@ const axios = require('axios');
 const bodyParser = require('body-parser');
 const app = express();
 
+// Facebook App credentials
 const FACEBOOK_APP_ID = '200424423651082'; 
 const FACEBOOK_APP_SECRET = '2a9918c6bcd75b94cefcbb5635c6ad16';
+const FACEBOOK_REDIRECT_URI = 'http://localhost:3000/auth/facebook/callback'; // your callback URL
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Menyediakan halaman input username dan password
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>Facebook Login</h1>
-        <form action="/login" method="POST">
-            <label for="email">Email:</label><br>
-            <input type="text" id="email" name="email" required><br>
-            <label for="password">Password:</label><br>
-            <input type="password" id="password" name="password" required><br>
-            <button type="submit">Login</button>
-        </form>
-    `);
+// Step 1: Redirect to Facebook Login
+app.get('/login', (req, res) => {
+    const facebookAuthUrl = `https://www.facebook.com/v15.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${FACEBOOK_REDIRECT_URI}&scope=email,public_profile`;
+    res.redirect(facebookAuthUrl);
 });
 
-// Menangani input login
-app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+// Step 2: Handle the redirect from Facebook after successful login
+app.get('/auth/facebook/callback', async (req, res) => {
+    const { code } = req.query;
+
+    if (!code) {
+        return res.status(400).send('No code provided');
+    }
 
     try {
-        // Mengirim permintaan login ke Facebook
-        const response = await axios.post('https://graph.facebook.com/auth/login', null, {
+        // Step 3: Exchange the authorization code for an access token
+        const response = await axios.get('https://graph.facebook.com/v15.0/oauth/access_token', {
             params: {
-                email: email,
-                password: password,
-                access_token: `${FACEBOOK_APP_ID}|${FACEBOOK_APP_SECRET}`,
-                format: 'json',
-                sdk: 'ios',
-                generate_session_cookies: 1
-            }
+                client_id: FACEBOOK_APP_ID,
+                client_secret: FACEBOOK_APP_SECRET,
+                redirect_uri: FACEBOOK_REDIRECT_URI,
+                code,
+            },
         });
 
-        const data = response.data;
+        const { access_token } = response.data;
 
-        if (data.error) {
-            return res.status(400).send(`Login error: ${data.error.message}`);
-        }
+        // Step 4: Use the access token to fetch user data
+        const userInfo = await axios.get('https://graph.facebook.com/me', {
+            params: {
+                access_token,
+                fields: 'id,name,email',
+            },
+        });
 
-        const { access_token, session_cookies, uid } = data;
-
+        // Display user info
         res.send(`
             <h1>Login Successful</h1>
-            <p>Facebook User ID: ${uid}</p>
+            <p>Facebook User ID: ${userInfo.data.id}</p>
+            <p>Name: ${userInfo.data.name}</p>
+            <p>Email: ${userInfo.data.email}</p>
             <p>Access Token: ${access_token}</p>
-            <p>Cookies: ${JSON.stringify(session_cookies)}</p>
         `);
     } catch (err) {
-        console.error('Error during login:', err.message);
-        res.status(500).send('Failed to login to Facebook. Please check your credentials.');
+        console.error('Error during authentication:', err.message);
+        res.status(500).send('Error logging in with Facebook.');
     }
 });
 
-// Menjalankan server
+// Start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
