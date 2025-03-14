@@ -1,18 +1,16 @@
 const express = require('express');
+const serverless = require('serverless-http');
 const axios = require('axios');
-const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const app = express();
 
+// App ID dan lainnya tetap
 const FACEBOOK_APP_ID = '200424423651082';
 const FACEBOOK_APP_SECRET = '2a9918c6bcd75b94cefcbb5635c6ad16';
-const FACEBOOK_REDIRECT_URI = 'https://callbackmain.vercel.app/auth/facebook/callback';
+const FACEBOOK_REDIRECT_URI = 'https://callbackmain.vercel.app/api/auth/facebook/callback'; // Ubah jadi pakai /api/
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Penyimpanan user sementara (pakai database sesungguhnya di produksi)
-const users = [];
 
 // Halaman utama
 app.get('/', (req, res) => {
@@ -37,6 +35,7 @@ app.get('/', (req, res) => {
         <a href="/login/facebook">Login dengan Facebook</a>
     `);
 });
+
 
 // ✅ Route untuk registrasi
 app.post('/register', async (req, res) => {
@@ -121,5 +120,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`✅ Server berjalan di http://localhost:${port}`);
 });
-
-module.exports = app;
+module.exports.handler = serverless(app);
